@@ -1,0 +1,9 @@
+F:/dev/zMass/vendor/imgui/examples/example_glfw_vulkan/out/build/x64-Debug/CMakeFiles/example_glfw_vulkan.dir
+F:/dev/zMass/vendor/imgui/examples/example_glfw_vulkan/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+F:/dev/zMass/vendor/imgui/examples/example_glfw_vulkan/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
+F:/dev/zMass/vendor/imgui/examples/example_glfw_vulkan/out/build/x64-Debug/binary_dir/CMakeFiles/edit_cache.dir
+F:/dev/zMass/vendor/imgui/examples/example_glfw_vulkan/out/build/x64-Debug/binary_dir/CMakeFiles/rebuild_cache.dir
+F:/dev/zMass/vendor/imgui/examples/example_glfw_vulkan/out/build/x64-Debug/binary_dir/src/CMakeFiles/rebuild_cache.dir
+F:/dev/zMass/vendor/imgui/examples/example_glfw_vulkan/out/build/x64-Debug/binary_dir/src/CMakeFiles/glfw.dir
+F:/dev/zMass/vendor/imgui/examples/example_glfw_vulkan/out/build/x64-Debug/binary_dir/src/CMakeFiles/update_mappings.dir
+F:/dev/zMass/vendor/imgui/examples/example_glfw_vulkan/out/build/x64-Debug/binary_dir/src/CMakeFiles/edit_cache.dir

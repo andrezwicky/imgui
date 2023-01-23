@@ -1,13 +1,15 @@
 project "ImGui"
 	kind "StaticLib"
 	language "C++"
-    staticruntime "off"
+    staticruntime "on"
 
 	targetdir ("bin/" .. outputdir .. "/%{prj.name}")
 	objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
 	files
 	{
+	    "misc/cpp/imgui_stdlib.cpp",
+		"misc/cpp/imgui_stdlib.h",
 		"imconfig.h",
 		"imgui.h",
 		"imgui.cpp",
@@ -18,7 +20,17 @@ project "ImGui"
 		"imstb_rectpack.h",
 		"imstb_textedit.h",
 		"imstb_truetype.h",
-		"imgui_demo.cpp"
+		"imgui_demo.cpp",
+		"implot.cpp",
+		"implot.h",
+		"implot_demo.cpp",
+		"implot_internal.h",
+		"implot_items.cpp",
+		"imgui_colorfultext.cpp",
+		"imgui_colorfultext.h"
+		
+		
+		
 	}
 
 	filter "system:windows"
