@@ -65,6 +65,7 @@
 
 #include "imgui_impl_vulkan.h"
 #include <stdio.h>
+#include <iostream>
 
 // Visual Studio warnings
 #ifdef _MSC_VER
@@ -968,7 +969,7 @@ bool ImGui_ImplVulkan_CreateDeviceObjects()
         binding[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         binding[0].descriptorCount = 1;
         binding[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-        binding[0].pImmutableSamplers = sampler;
+        //binding[0].pImmutableSamplers = sampler;
         VkDescriptorSetLayoutCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         info.bindingCount = 1;
@@ -1208,6 +1209,7 @@ VkSurfaceFormatKHR ImGui_ImplVulkanH_SelectSurfaceFormat(VkPhysicalDevice physic
     avail_format.resize((int)avail_count);
     vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &avail_count, avail_format.Data);
 
+
     // First check if only one format, VK_FORMAT_UNDEFINED, is available, which would imply that any format is available
     if (avail_count == 1)
     {
@@ -1227,13 +1229,20 @@ VkSurfaceFormatKHR ImGui_ImplVulkanH_SelectSurfaceFormat(VkPhysicalDevice physic
     else
     {
         // Request several formats, the first found will be used
+        std::cout << "available color format / space\t\n";
         for (int request_i = 0; request_i < request_formats_count; request_i++)
             for (uint32_t avail_i = 0; avail_i < avail_count; avail_i++)
+            {
+                std::cout << avail_format[avail_i].format << "\t/\t" << avail_format[avail_i].colorSpace << std::endl;
                 if (avail_format[avail_i].format == request_formats[request_i] && avail_format[avail_i].colorSpace == request_color_space)
                     return avail_format[avail_i];
+            }
+
 
         // If none of the requested image formats could be found, use the first available
+
         return avail_format[0];
+
     }
 }
 
