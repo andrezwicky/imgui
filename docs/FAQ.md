@@ -1,4 +1,4 @@
-# FAQ (Frequenty Asked Questions)
+# FAQ (Frequently Asked Questions)
 
 You may link to this document using short form:
   https://www.dearimgui.com/faq
@@ -58,7 +58,7 @@ or view this file with any Markdown viewer.
 - The [Glossary](https://github.com/ocornut/imgui/wiki/Glossary) page may be useful.
 - The [Issues](https://github.com/ocornut/imgui/issues) and [Discussions](https://github.com/ocornut/imgui/discussions) sections can be searched for past questions and issues.
 - Your programming IDE is your friend, find the type or function declaration to find comments associated with it.
-- The `ImGui::ShowMetricsWindow()` function exposes lots of internal information and tools. Although it is primary designed as a debugging tool, having access to that information tends to help understands concepts.
+- The `ImGui::ShowMetricsWindow()` function exposes lots of internal information and tools. Although it is primarily designed as a debugging tool, having access to that information tends to help understands concepts.
 
 ##### [Return to Index](#index)
 
@@ -175,8 +175,16 @@ Each draw command needs the triangle rendered using the clipping rectangle provi
 Rectangles provided by Dear ImGui are defined as
 `(x1=left,y1=top,x2=right,y2=bottom)`
 and **NOT** as
-`(x1,y1,width,height)`
-Refer to rendering backends in the [examples/](https://github.com/ocornut/imgui/tree/master/examples) folder for references of how to handle the `ClipRect` field.
+`(x1,y1,width,height)`.
+Refer to rendering backends in the [backends/](https://github.com/ocornut/imgui/tree/master/backends) folder for references of how to handle the `ClipRect` field.
+For example, the [DirectX11 backend](https://github.com/ocornut/imgui/blob/master/backends/imgui_impl_dx11.cpp) does this:
+```cpp
+// Project scissor/clipping rectangles into framebuffer space
+ImVec2 clip_off = draw_data->DisplayPos;
+ImVec2 clip_min(pcmd->ClipRect.x - clip_off.x, pcmd->ClipRect.y - clip_off.y);
+ImVec2 clip_max(pcmd->ClipRect.z - clip_off.x, pcmd->ClipRect.w - clip_off.y);
+if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
+    continue;
 
 // Apply scissor/clipping rectangle
 const D3D11_RECT r = { (LONG)clip_min.x, (LONG)clip_min.y, (LONG)clip_max.x, (LONG)clip_max.y };
@@ -234,8 +242,8 @@ Dear ImGui internally needs to uniquely identify UI elements.
 Elements that are typically not clickable (such as calls to the Text functions) don't need an ID.
 Interactive widgets (such as calls to Button buttons) need a unique ID.
 
-**Unique ID are used internally to track active widgets and occasionally associate state to widgets.<BR>
-Unique ID are implicitly built from the hash of multiple elements that identify the "path" to the UI element.**
+**Unique IDs are used internally to track active widgets and occasionally associate state to widgets.<BR>
+Unique IDs are implicitly built from the hash of multiple elements that identify the "path" to the UI element.**
 
 Since Dear ImGui 1.85, you can use `Demo>Tools>ID Stack Tool` or call `ImGui::ShowIDStackToolWindow()`. The tool display intermediate values leading to the creation of a unique ID, making things easier to debug and understand.
 
@@ -276,12 +284,12 @@ Button("OK");      // ERROR: ID collision with the first button! Interacting wit
 Button("");        // ERROR: ID collision with Begin("MyWindow")!
 End();
 ```
-Fear not! this is easy to solve and there are many ways to solve it!
+Fear not! This is easy to solve and there are many ways to solve it!
 
 - Solving ID conflict in a simple/local context:
-When passing a label you can optionally specify extra ID information within string itself.
+When passing a label you can optionally specify extra ID information within the string itself.
 Use "##" to pass a complement to the ID that won't be visible to the end-user.
-This helps solving the simple collision cases when you know e.g. at compilation time which items
+This helps solve the simple collision cases when you know e.g. at compilation time which items
 are going to be created:
 ```cpp
 Begin("MyWindow");
@@ -295,8 +303,8 @@ End();
 ```cpp
 Checkbox("##On", &b);  // Label = "",       ID = hash of (..., "##On")   // No visible label, just a checkbox!
 ```
-- Occasionally/rarely you might want change a label while preserving a constant ID. This allows
-you to animate labels. For example you may want to include varying information in a window title bar,
+- Occasionally/rarely you might want to change a label while preserving a constant ID. This allows
+you to animate labels. For example, you may want to include varying information in a window title bar,
 but windows are uniquely identified by their ID. Use "###" to pass a label that isn't part of ID:
 ```cpp
 Button("Hello###ID");  // Label = "Hello",  ID = hash of (..., "###ID")
@@ -309,9 +317,9 @@ Begin(buf);            // Variable title,   ID = hash of "MyGame"
 Use `PushID()` / `PopID()` to create scopes and manipulate the ID stack, as to avoid ID conflicts
 within the same window. This is the most convenient way of distinguishing ID when iterating and
 creating many UI elements programmatically.
-You can push a pointer, a string or an integer value into the ID stack.
-Remember that ID are formed from the concatenation of _everything_ pushed into the ID stack.
-At each level of the stack we store the seed used for items at this level of the ID stack.
+You can push a pointer, a string, or an integer value into the ID stack.
+Remember that IDs are formed from the concatenation of _everything_ pushed into the ID stack.
+At each level of the stack, we store the seed used for items at this level of the ID stack.
 ```cpp
 Begin("Window");
 for (int i = 0; i < 100; i++)
@@ -346,7 +354,7 @@ PushID("node");
   PopID();
 PopID();
 ```
-- Tree nodes implicitly creates a scope for you by calling `PushID()`:
+- Tree nodes implicitly create a scope for you by calling `PushID()`:
 ```cpp
 Button("Click");       // Label = "Click",  ID = hash of (..., "Click")
 if (TreeNode("node"))  // <-- this function call will do a PushID() for you (unless instructed not to, with a special flag)
@@ -356,8 +364,8 @@ if (TreeNode("node"))  // <-- this function call will do a PushID() for you (unl
 }
 ```
 
-When working with trees, ID are used to preserve the open/close state of each tree node.
-Depending on your use cases you may want to use strings, indices or pointers as ID.
+When working with trees, IDs are used to preserve the open/close state of each tree node.
+Depending on your use cases you may want to use strings, indices, or pointers as ID.
 - e.g. when following a single pointer that may change over time, using a static string as ID
 will preserve your node open/closed state when the targeted object change.
 - e.g. when displaying a list of objects, using indices or pointers as ID will preserve the
@@ -379,7 +387,7 @@ Short explanation:
 **Please read documentations or tutorials on your graphics API to understand how to display textures on the screen before moving onward.**
 
 Long explanation:
-- Dear ImGui's job is to create "meshes", defined in a renderer-agnostic format made of draw commands and vertices. At the end of the frame those meshes (ImDrawList) will be displayed by your rendering function. They are made up of textured polygons and the code to render them is generally fairly short (a few dozen lines). In the examples/ folder we provide functions for popular graphics API (OpenGL, DirectX, etc.).
+- Dear ImGui's job is to create "meshes", defined in a renderer-agnostic format made of draw commands and vertices. At the end of the frame, those meshes (ImDrawList) will be displayed by your rendering function. They are made up of textured polygons and the code to render them is generally fairly short (a few dozen lines). In the examples/ folder, we provide functions for popular graphics APIs (OpenGL, DirectX, etc.).
 - Each rendering function decides on a data type to represent "textures". The concept of what is a "texture" is entirely tied to your underlying engine/graphics API.
  We carry the information to identify a "texture" in the ImTextureID type.
 ImTextureID default to ImU64 aka 8 bytes worth of data: just enough to store one pointer or integer of your choice.
@@ -408,9 +416,9 @@ DirectX12:
 For example, in the OpenGL example backend we store raw OpenGL texture identifier (GLuint) inside ImTextureID.
 Whereas in the DirectX11 example backend we store a pointer to ID3D11ShaderResourceView inside ImTextureID, which is a higher-level structure tying together both the texture and information about its format and how to read it.
 
-- If you have a custom engine built over e.g. OpenGL, instead of passing GLuint around you may decide to use a high-level data type to carry information about the texture as well as how to display it (shaders, etc.). The decision of what to use as ImTextureID can always be made better knowing how your codebase is designed. If your engine has high-level data types for "textures" and "material" then you may want to use them.
+- If you have a custom engine built over e.g. OpenGL, instead of passing GLuint around you may decide to use a high-level data type to carry information about the texture as well as how to display it (shaders, etc.). The decision of what to use as ImTextureID can always be made better by knowing how your codebase is designed. If your engine has high-level data types for "textures" and "material" then you may want to use them.
 If you are starting with OpenGL or DirectX or Vulkan and haven't built much of a rendering engine over them, keeping the default ImTextureID representation suggested by the example backends is probably the best choice.
-(Advanced users may also decide to keep a low-level type in ImTextureID, and use ImDrawList callback and pass information to their renderer)
+(Advanced users may also decide to keep a low-level type in ImTextureID, use ImDrawList callback and pass information to their renderer)
 
 User code may do:
 ```cpp
@@ -424,9 +432,9 @@ The renderer function called after ImGui::Render() will receive that same value 
 MyTexture* texture = (MyTexture*)(intptr_t)pcmd->GetTexID();
 MyEngineBindTexture2D(texture);
 ```
-Once you understand this design you will understand that loading image files and turning them into displayable textures is not within the scope of Dear ImGui.
-This is by design and is actually a good thing, because it means your code has full control over your data types and how you display them.
-If you want to display an image file (e.g. PNG file) into the screen, please refer to documentation and tutorials for the graphics API you are using.
+Once you understand this design, you will understand that loading image files and turning them into displayable textures is not within the scope of Dear ImGui.
+This is by design and is a good thing because it means your code has full control over your data types and how you display them.
+If you want to display an image file (e.g. PNG file) on the screen, please refer to documentation and tutorials for the graphics API you are using.
 
 Refer to [Image Loading and Displaying Examples](https://github.com/ocornut/imgui/wiki/Image-Loading-and-Displaying-Examples) on the [Wiki](https://github.com/ocornut/imgui/wiki) to find simplified examples for loading textures with OpenGL, DirectX9 and DirectX11.
 
@@ -468,7 +476,7 @@ This way you will be able to use your own types everywhere, e.g. passing `MyVect
 ---
 
 ### Q: How can I interact with standard C++ types (such as std::string and std::vector)?
-- Being highly portable (backends/bindings for several languages, frameworks, programming style, obscure or older platforms/compilers), and aiming for compatibility & performance suitable for every modern real-time game engines, dear imgui does not use any of std C++ types. We use raw types (e.g. char* instead of std::string) because they adapt to more use cases.
+- Being highly portable (backends/bindings for several languages, frameworks, programming styles, obscure or older platforms/compilers), and aiming for compatibility & performance suitable for every modern real-time game engine, Dear ImGui does not use any of std C++ types. We use raw types (e.g. char* instead of std::string) because they adapt to more use cases.
 - To use ImGui::InputText() with a std::string or any resizable string class, see [misc/cpp/imgui_stdlib.h](https://github.com/ocornut/imgui/blob/master/misc/cpp/imgui_stdlib.h).
 - To use combo boxes and list boxes with `std::vector` or any other data structure: the `BeginCombo()/EndCombo()` API
 lets you iterate and submit items yourself, so does the `ListBoxHeader()/ListBoxFooter()` API.
@@ -477,12 +485,12 @@ Prefer using them over the old and awkward `Combo()/ListBox()` api.
 You may write your own one-liner wrappers to facilitate user code (tip: add new functions in ImGui:: namespace from your code).
 - Dear ImGui applications often need to make intensive use of strings. It is expected that many of the strings you will pass
 to the API are raw literals (free in C/C++) or allocated in a manner that won't incur a large cost on your application.
-Please bear in mind that using `std::string` on applications with large amount of UI may incur unsatisfactory performances.
+Please bear in mind that using `std::string` on applications with a large amount of UI may incur unsatisfactory performances.
 Modern implementations of `std::string` often include small-string optimization (which is often a local buffer) but those
 are not configurable and not the same across implementations.
-- If you are finding your UI traversal cost to be too large, make sure your string usage is not leading to excessive amount
-of heap allocations. Consider using literals, statically sized buffers and your own helper functions. A common pattern
-is that you will need to build lots of strings on the fly, and their maximum length can be easily be scoped ahead.
+- If you are finding your UI traversal cost to be too large, make sure your string usage is not leading to an excessive amount
+of heap allocations. Consider using literals, statically sized buffers, and your own helper functions. A common pattern
+is that you will need to build lots of strings on the fly, and their maximum length can be easily scoped ahead.
 One possible implementation of a helper to facilitate printf-style building of strings: https://github.com/ocornut/Str
 This is a small helper where you can instance strings with configurable local buffers length. Many game engines will
 provide similar or better string helpers.
@@ -531,7 +539,7 @@ ImGui::End();
 
 ### Q: How should I handle DPI in my application?
 
-The short answer is: obtain the desired DPI scale, load your fonts resized with that scale (always round down fonts size to nearest integer), and scale your Style structure accordingly using `style.ScaleAllSizes()`.
+The short answer is: obtain the desired DPI scale, load your fonts resized with that scale (always round down fonts size to the nearest integer), and scale your Style structure accordingly using `style.ScaleAllSizes()`.
 
 Your application may want to detect DPI change and reload the fonts and reset style between frames.
 
@@ -541,12 +549,12 @@ Down the line Dear ImGui will provide a variety of standardized reference values
 
 Applications in the `examples/` folder are not DPI aware partly because they are unable to load a custom font from the file-system (may change that in the future).
 
-The reason DPI is not auto-magically solved in stock examples is that we don't yet have a satisfying solution for the "multi-dpi"  problem (using the `docking` branch: when multiple viewport windows are over multiple monitors using different DPI scale). The current way to handle this on the application side is:
+The reason DPI is not auto-magically solved in stock examples is that we don't yet have a satisfying solution for the "multi-dpi" problem (using the `docking` branch: when multiple viewport windows are over multiple monitors using different DPI scales). The current way to handle this on the application side is:
 - Create and maintain one font atlas per active DPI scale (e.g. by iterating `platform_io.Monitors[]` before `NewFrame()`).
 - Hook `platform_io.OnChangedViewport()` to detect when a `Begin()` call makes a Dear ImGui window change monitor (and therefore DPI).
-- In the hook: swap atlas, swap style with correctly sized one, remap the current font from one atlas to the other (may need to maintain a remapping table of your fonts at variying DPI scale).
+- In the hook: swap atlas, swap style with correctly sized one, and remap the current font from one atlas to the other (you may need to maintain a remapping table of your fonts at varying DPI scales).
 
-This approach is relatively easy and functional but come with two issues:
+This approach is relatively easy and functional but comes with two issues:
 - It's not possibly to reliably size or position a window ahead of `Begin()` without knowing on which monitor it'll land.
 - Style override may be lost during the `Begin()` call crossing monitor boundaries. You may need to do some custom scaling mumbo-jumbo if you want your `OnChangedViewport()` handler to preserve style overrides.
 
@@ -589,7 +597,7 @@ io.Fonts->AddFontFromFileTTF("MyFolder/MyFont.ttf", size);  // ALSO CORRECT
 ---
 
 ### Q: How can I easily use icons in my application?
-The most convenient and practical way is to merge an icon font such as FontAwesome inside you
+The most convenient and practical way is to merge an icon font such as FontAwesome inside your
 main font. Then you can refer to icons within your strings.
 Read the [docs/FONTS.md](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md) file for more details about icons font loading.
 
@@ -631,7 +639,7 @@ of [FONTS.md](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md) for de
 Text input: it is up to your application to pass the right character code by calling `io.AddInputCharacter()`.
 The applications in examples/ are doing that.
 Windows: you can use the WM_CHAR or WM_UNICHAR or WM_IME_CHAR message (depending if your app is built using Unicode or MultiByte mode).
-You may also use MultiByteToWideChar() or ToUnicode() to retrieve Unicode codepoints from MultiByte characters or keyboard state.
+You may also use `MultiByteToWideChar()` or `ToUnicode()` to retrieve Unicode codepoints from MultiByte characters or keyboard state.
 Windows: if your language is relying on an Input Method Editor (IME), you can write your HWND to ImGui::GetMainViewport()->PlatformHandleRaw
 for the default implementation of GetPlatformIO().Platform_SetImeDataFn() to set your Microsoft IME position correctly.
 
@@ -656,9 +664,9 @@ You may take a look at:
 
 ### Q: Can you create elaborate/serious tools with Dear ImGui?
 
-Yes. People have written game editors, data browsers, debuggers, profilers and all sort of non-trivial tools with the library. In my experience the simplicity of the API is very empowering. Your UI runs close to your live data. Make the tools always-on and everybody in the team will be inclined to create new tools (as opposed to more "offline" UI toolkits where only a fraction of your team effectively creates tools). The list of sponsors below is also an indicator that serious game teams have been using the library.
+Yes. People have written game editors, data browsers, debuggers, profilers, and all sorts of non-trivial tools with the library. In my experience, the simplicity of the API is very empowering. Your UI runs close to your live data. Make the tools always-on and everybody in the team will be inclined to create new tools (as opposed to more "offline" UI toolkits where only a fraction of your team effectively creates tools). The list of sponsors below is also an indicator that serious game teams have been using the library.
 
-Dear ImGui is very programmer centric and the immediate-mode GUI paradigm might require you to readjust some habits before you can realize its full potential. Dear ImGui is about making things that are simple, efficient and powerful.
+Dear ImGui is very programmer centric and the immediate-mode GUI paradigm might require you to readjust some habits before you can realize its full potential. Dear ImGui is about making things that are simple, efficient, and powerful.
 
 Dear ImGui is built to be efficient and scalable toward the needs for AAA-quality applications running all day. The IMGUI paradigm offers different opportunities for optimization than the more typical RMGUI paradigm.
 
@@ -670,7 +678,7 @@ Dear ImGui is built to be efficient and scalable toward the needs for AAA-qualit
 
 Somewhat. You can alter the look of the interface to some degree: changing colors, sizes, padding, rounding, and fonts. However, as Dear ImGui is designed and optimized to create debug tools, the amount of skinning you can apply is limited. There is only so much you can stray away from the default look and feel of the interface. Dear ImGui is NOT designed to create a user interface for games, although with ingenious use of the low-level API you can do it.
 
-A reasonably skinned application may look like (screenshot from [#2529](https://github.com/ocornut/imgui/issues/2529#issuecomment-524281119))
+A reasonably skinned application may look like (screenshot from [#2529](https://github.com/ocornut/imgui/issues/2529#issuecomment-524281119)):
 ![minipars](https://user-images.githubusercontent.com/314805/63589441-d9794f00-c5b1-11e9-8d96-cfc1b93702f7.png)
 
 ##### [Return to Index](#index)
@@ -679,7 +687,7 @@ A reasonably skinned application may look like (screenshot from [#2529](https://
 
 ### Q: Why using C++ (as opposed to C)?
 
-Dear ImGui takes advantage of a few C++ languages features for convenience but nothing anywhere Boost insanity/quagmire. Dear ImGui doesn't use any C++ header file. Dear ImGui uses a very small subset of C++11 features. In particular, function overloading and default parameters are used to make the API easier to use and code more terse. Doing so I believe the API is sitting on a sweet spot and giving up on those features would make the API more cumbersome. Other features such as namespace, constructors and templates (in the case of the ImVector<> class) are also relied on as a convenience.
+Dear ImGui takes advantage of a few C++ language features for convenience but nothing anywhere Boost insanity/quagmire. Dear ImGui doesn't use any C++ header file. Dear ImGui uses a very small subset of C++11 features. In particular, function overloading and default parameters are used to make the API easier to use and code terser. Doing so I believe the API is sitting on a sweet spot and giving up on those features would make the API more cumbersome. Other features such as namespace, constructors, and templates (in the case of the ImVector<> class) are also relied on as a convenience.
 
 There is an auto-generated [c-api for Dear ImGui (cimgui)](https://github.com/cimgui/cimgui) by Sonoro1234 and Stephan Dilly. It is designed for creating bindings to other languages. If possible, I would suggest using your target language functionalities to try replicating the function overloading and default parameters used in C++ else the API may be harder to use. Also see [Bindings](https://github.com/ocornut/imgui/wiki/Bindings) for various third-party bindings.
 

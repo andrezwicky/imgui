@@ -9,6 +9,7 @@
 //  [X] Platform: Partial keyboard support. Since 1.87 we are using the io.AddKeyEvent() function. Pass ImGuiKey values to all key functions e.g. ImGui::IsKeyPressed(ImGuiKey_Space). [Legacy GLUT values are obsolete since 1.87 and not supported since 1.91.5]
 // Issues:
 //  [ ] Platform: GLUT is unable to distinguish e.g. Backspace from CTRL+H or TAB from CTRL+I
+//  [ ] Platform: Missing horizontal mouse wheel support.
 //  [ ] Platform: Missing mouse cursor shape/visibility support.
 //  [ ] Platform: Missing clipboard support (not supported by Glut).
 //  [ ] Platform: Missing gamepad support.
@@ -37,6 +38,7 @@
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
 #include "imgui_impl_glut.h"
+#define GL_SILENCE_DEPRECATION
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -215,9 +217,9 @@ static void ImGui_ImplGLUT_UpdateKeyModifiers()
 {
     ImGuiIO& io = ImGui::GetIO();
     int glut_key_mods = glutGetModifiers();
-    io.AddKeyEvent(ImGuiKey_ModCtrl, (glut_key_mods & GLUT_ACTIVE_CTRL) != 0);
-    io.AddKeyEvent(ImGuiKey_ModShift, (glut_key_mods & GLUT_ACTIVE_SHIFT) != 0);
-    io.AddKeyEvent(ImGuiKey_ModAlt, (glut_key_mods & GLUT_ACTIVE_ALT) != 0);
+    io.AddKeyEvent(ImGuiMod_Ctrl, (glut_key_mods & GLUT_ACTIVE_CTRL) != 0);
+    io.AddKeyEvent(ImGuiMod_Shift, (glut_key_mods & GLUT_ACTIVE_SHIFT) != 0);
+    io.AddKeyEvent(ImGuiMod_Alt, (glut_key_mods & GLUT_ACTIVE_ALT) != 0);
 }
 
 static void ImGui_ImplGLUT_AddKeyEvent(ImGuiKey key, bool down, int native_keycode)
@@ -276,7 +278,7 @@ void ImGui_ImplGLUT_MouseFunc(int glut_button, int state, int x, int y)
     if (glut_button == GLUT_LEFT_BUTTON) button = 0;
     if (glut_button == GLUT_RIGHT_BUTTON) button = 1;
     if (glut_button == GLUT_MIDDLE_BUTTON) button = 2;
-    if (button != -1 && state == GLUT_DOWN || state == GLUT_UP)
+    if (button != -1 && (state == GLUT_DOWN || state == GLUT_UP))
         io.AddMouseButtonEvent(button, state == GLUT_DOWN);
 }
 

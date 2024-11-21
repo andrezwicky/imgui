@@ -35,7 +35,7 @@
 //  2022-11-10: Fixed rendering when a depth buffer is enabled. Added 'WGPUTextureFormat depth_format' parameter to ImGui_ImplWGPU_Init().
 //  2022-10-11: Using 'nullptr' instead of 'NULL' as per our switch to C++11.
 //  2021-11-29: Passing explicit buffer sizes to wgpuRenderPassEncoderSetVertexBuffer()/wgpuRenderPassEncoderSetIndexBuffer().
-//  2021-08-24: Fix for latest specs.
+//  2021-08-24: Fixed for latest specs.
 //  2021-05-24: Add support for draw_data->FramebufferScale.
 //  2021-05-19: Replaced direct access to ImDrawCmd::TextureId with a call to ImDrawCmd::GetTexID(). (will become a requirement)
 //  2021-05-16: Update to latest WebGPU specs (compatible with Emscripten 2.0.20 and Chrome Canary 92).
@@ -59,12 +59,6 @@
 #include "imgui_impl_wgpu.h"
 #include <limits.h>
 #include <webgpu/webgpu.h>
-
-#define HAS_EMSCRIPTEN_VERSION(major, minor, tiny) (__EMSCRIPTEN_major__ > (major) || (__EMSCRIPTEN_major__ == (major) && __EMSCRIPTEN_minor__ > (minor)) || (__EMSCRIPTEN_major__ == (major) && __EMSCRIPTEN_minor__ == (minor) && __EMSCRIPTEN_tiny__ >= (tiny)))
-
-#if defined(__EMSCRIPTEN__) && !HAS_EMSCRIPTEN_VERSION(2, 0, 20)
-#error "Requires at least emscripten 2.0.20"
-#endif
 
 // Dear ImGui prototypes from imgui_internal.h
 extern ImGuiID ImHashData(const void* data_p, size_t data_size, ImU32 seed = 0);
@@ -183,31 +177,31 @@ static void SafeRelease(ImDrawIdx*& res)
 {
     if (res)
         delete[] res;
-    res = NULL;
+    res = nullptr;
 }
 static void SafeRelease(ImDrawVert*& res)
 {
     if (res)
         delete[] res;
-    res = NULL;
+    res = nullptr;
 }
 static void SafeRelease(WGPUBindGroupLayout& res)
 {
     if (res)
         wgpuBindGroupLayoutRelease(res);
-    res = NULL;
+    res = nullptr;
 }
 static void SafeRelease(WGPUBindGroup& res)
 {
     if (res)
         wgpuBindGroupRelease(res);
-    res = NULL;
+    res = nullptr;
 }
 static void SafeRelease(WGPUBuffer& res)
 {
     if (res)
         wgpuBufferRelease(res);
-    res = NULL;
+    res = nullptr;
 }
 static void SafeRelease(WGPUPipelineLayout& res)
 {
@@ -219,31 +213,31 @@ static void SafeRelease(WGPURenderPipeline& res)
 {
     if (res)
         wgpuRenderPipelineRelease(res);
-    res = NULL;
+    res = nullptr;
 }
 static void SafeRelease(WGPUSampler& res)
 {
     if (res)
         wgpuSamplerRelease(res);
-    res = NULL;
+    res = nullptr;
 }
 static void SafeRelease(WGPUShaderModule& res)
 {
     if (res)
         wgpuShaderModuleRelease(res);
-    res = NULL;
+    res = nullptr;
 }
 static void SafeRelease(WGPUTextureView& res)
 {
     if (res)
         wgpuTextureViewRelease(res);
-    res = NULL;
+    res = nullptr;
 }
 static void SafeRelease(WGPUTexture& res)
 {
     if (res)
         wgpuTextureRelease(res);
-    res = NULL;
+    res = nullptr;
 }
 
 static void SafeRelease(RenderResources& res)
@@ -387,7 +381,7 @@ void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURenderPassEncoder 
     FrameResources* fr = &bd->pFrameResources[bd->frameIndex % bd->numFramesInFlight];
 
     // Create and grow vertex/index buffers if needed
-    if (fr->VertexBuffer == NULL || fr->VertexBufferSize < draw_data->TotalVtxCount)
+    if (fr->VertexBuffer == nullptr || fr->VertexBufferSize < draw_data->TotalVtxCount)
     {
         if (fr->VertexBuffer)
         {
@@ -399,7 +393,7 @@ void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURenderPassEncoder 
 
         WGPUBufferDescriptor vb_desc =
         {
-            NULL,
+            nullptr,
             "Dear ImGui Vertex buffer",
 #ifdef IMGUI_IMPL_WEBGPU_BACKEND_DAWN
             WGPU_STRLEN,
@@ -414,7 +408,7 @@ void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURenderPassEncoder 
 
         fr->VertexBufferHost = new ImDrawVert[fr->VertexBufferSize];
     }
-    if (fr->IndexBuffer == NULL || fr->IndexBufferSize < draw_data->TotalIdxCount)
+    if (fr->IndexBuffer == nullptr || fr->IndexBufferSize < draw_data->TotalIdxCount)
     {
         if (fr->IndexBuffer)
         {
@@ -426,7 +420,7 @@ void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURenderPassEncoder 
 
         WGPUBufferDescriptor ib_desc =
         {
-            NULL,
+            nullptr,
             "Dear ImGui Index buffer",
 #ifdef IMGUI_IMPL_WEBGPU_BACKEND_DAWN
             WGPU_STRLEN,
@@ -497,7 +491,7 @@ void ImGui_ImplWGPU_RenderDrawData(ImDrawData* draw_data, WGPURenderPassEncoder 
                 auto bind_group = bd->renderResources.ImageBindGroups.GetVoidPtr(tex_id_hash);
                 if (bind_group)
                 {
-                    wgpuRenderPassEncoderSetBindGroup(pass_encoder, 1, (WGPUBindGroup)bind_group, 0, NULL);
+                    wgpuRenderPassEncoderSetBindGroup(pass_encoder, 1, (WGPUBindGroup)bind_group, 0, nullptr);
                 }
                 else
                 {
@@ -583,6 +577,7 @@ static void ImGui_ImplWGPU_CreateFontsTexture()
     }
 
     // Create the associated sampler
+    // (Bilinear sampling is required by default. Set 'io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines' or 'style.AntiAliasedLinesUseTex = false' to allow point/nearest sampling)
     {
         WGPUSamplerDescriptor sampler_desc = {};
         sampler_desc.minFilter = WGPUFilterMode_Linear;
@@ -605,7 +600,7 @@ static void ImGui_ImplWGPU_CreateUniformBuffer()
     ImGui_ImplWGPU_Data* bd = ImGui_ImplWGPU_GetBackendData();
     WGPUBufferDescriptor ub_desc =
     {
-        NULL,
+        nullptr,
         "Dear ImGui Uniform buffer",
 #ifdef IMGUI_IMPL_WEBGPU_BACKEND_DAWN
         WGPU_STRLEN,
@@ -739,10 +734,6 @@ bool ImGui_ImplWGPU_CreateDeviceObjects()
     ImGui_ImplWGPU_CreateUniformBuffer();
 
     // Create resource bind group
-    WGPUBindGroupLayout bg_layouts[2];
-    bg_layouts[0] = wgpuRenderPipelineGetBindGroupLayout(g_pipelineState, 0);
-    bg_layouts[1] = wgpuRenderPipelineGetBindGroupLayout(g_pipelineState, 1);
-
     WGPUBindGroupEntry common_bg_entries[] =
     {
         { nullptr, 0, bd->renderResources.Uniforms, 0, MEMALIGN(sizeof(Uniforms), 16), 0, 0 },
@@ -778,7 +769,7 @@ void ImGui_ImplWGPU_InvalidateDeviceObjects()
     SafeRelease(bd->renderResources);
 
     ImGuiIO& io = ImGui::GetIO();
-    io.Fonts->SetTexID(NULL); // We copied g_pFontTextureView to io.Fonts->TexID so let's clear that as well.
+    io.Fonts->SetTexID(0); // We copied g_pFontTextureView to io.Fonts->TexID so let's clear that as well.
 
     for (unsigned int i = 0; i < bd->numFramesInFlight; i++)
         SafeRelease(bd->pFrameResources[i]);

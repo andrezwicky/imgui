@@ -183,8 +183,8 @@ void ImGui_ImplSDLRenderer2_RenderDrawData(ImDrawData* draw_data, SDL_Renderer* 
                 ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x, (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
                 if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
                 if (clip_min.y < 0.0f) { clip_min.y = 0.0f; }
-                if (clip_max.x > fb_width) { clip_max.x = (float)fb_width; }
-                if (clip_max.y > fb_height) { clip_max.y = (float)fb_height; }
+                if (clip_max.x > (float)fb_width) { clip_max.x = (float)fb_width; }
+                if (clip_max.y > (float)fb_height) { clip_max.y = (float)fb_height; }
                 if (clip_max.x <= clip_min.x || clip_max.y <= clip_min.y)
                     continue;
 
@@ -236,8 +236,9 @@ bool ImGui_ImplSDLRenderer2_CreateFontsTexture()
         SDL_Log("error creating texture");
         return false;
     }
-    SDL_UpdateTexture(bd->FontTexture, NULL, pixels, 4 * width);
+    SDL_UpdateTexture(bd->FontTexture, nullptr, pixels, 4 * width);
     SDL_SetTextureBlendMode(bd->FontTexture, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureScaleMode(bd->FontTexture, SDL_ScaleModeLinear);
 
     // Store our identifier
     io.Fonts->SetTexID((ImTextureID)(intptr_t)bd->FontTexture);
@@ -253,7 +254,7 @@ void ImGui_ImplSDLRenderer2_DestroyFontsTexture()
     {
         io.Fonts->SetTexID(0);
         SDL_DestroyTexture(bd->FontTexture);
-        bd->FontTexture = NULL;
+        bd->FontTexture = nullptr;
     }
 }
 

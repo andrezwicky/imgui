@@ -45,6 +45,7 @@
 //  2018-11-30: Misc: Setting up io.BackendPlatformName/io.BackendRendererName so they can be displayed in the About Window.
 //  2018-06-13: Platform: Added clipboard support (from Allegro 5.1.12).
 //  2018-06-13: Renderer: Use draw_data->DisplayPos and draw_data->DisplaySize to setup projection matrix and clipping rectangle.
+//  2018-06-13: Renderer: Stopped using al_draw_indexed_prim() as it is buggy in Allegro's DX9 backend.
 //  2018-06-13: Renderer: Backup/restore transform and clipping rectangle.
 //  2018-06-11: Misc: Setup io.BackendFlags ImGuiBackendFlags_HasMouseCursors flag + honor ImGuiConfigFlags_NoMouseCursorChange flag.
 //  2018-04-18: Misc: Renamed file from imgui_impl_a5.cpp to imgui_impl_allegro5.cpp.
@@ -73,6 +74,19 @@
 #pragma warning (disable: 4127) // condition expression is constant
 #endif
 
+struct ImDrawVertAllegro
+{
+    ImVec2          pos;
+    ImVec2          uv;
+    ALLEGRO_COLOR   col;
+};
+
+// FIXME-OPT: Unfortunately Allegro doesn't support 32-bit packed colors so we have to convert them to 4 float as well..
+// FIXME-OPT: Consider inlining al_map_rgba()?
+// see https://github.com/liballeg/allegro5/blob/master/src/pixels.c#L554
+// and https://github.com/liballeg/allegro5/blob/master/include/allegro5/internal/aintern_pixels.h
+#define DRAW_VERT_IMGUI_TO_ALLEGRO(DST, SRC)  { (DST)->pos = (SRC)->pos; (DST)->uv = (SRC)->uv; unsigned char* c = (unsigned char*)&(SRC)->col; (DST)->col = al_map_rgba(c[0], c[1], c[2], c[3]); }
+
 // Allegro Data
 struct ImGui_ImplAllegro5_Data
 {
@@ -83,20 +97,16 @@ struct ImGui_ImplAllegro5_Data
     ALLEGRO_VERTEX_DECL*        VertexDecl;
     char*                       ClipboardTextData;
 
-    ImGui_ImplAllegro5_Data()   { memset(this, 0, sizeof(*this)); }
+    ImVector<ImDrawVertAllegro> BufVertices;
+    ImVector<int>               BufIndices;
+
+    ImGui_ImplAllegro5_Data()   { memset((void*)this, 0, sizeof(*this)); }
 };
 
 // Backend data stored in io.BackendPlatformUserData to allow support for multiple Dear ImGui contexts
 // It is STRONGLY preferred that you use docking branch with multi-viewports (== single Dear ImGui context + multiple windows) instead of multiple Dear ImGui contexts.
 // FIXME: multi-context support is not well tested and probably dysfunctional in this backend.
-static ImGui_ImplAllegro5_Data* ImGui_ImplAllegro5_GetBackendData()     { return ImGui::GetCurrentContext() ? (ImGui_ImplAllegro5_Data*)ImGui::GetIO().BackendPlatformUserData : NULL; }
-
-struct ImDrawVertAllegro
-{
-    ImVec2 pos;
-    ImVec2 uv;
-    ALLEGRO_COLOR col;
-};
+static ImGui_ImplAllegro5_Data* ImGui_ImplAllegro5_GetBackendData()     { return ImGui::GetCurrentContext() ? (ImGui_ImplAllegro5_Data*)ImGui::GetIO().BackendPlatformUserData : nullptr; }
 
 static void ImGui_ImplAllegro5_SetupRenderState(ImDrawData* draw_data)
 {
@@ -149,16 +159,13 @@ void ImGui_ImplAllegro5_RenderDrawData(ImDrawData* draw_data)
         {
             const ImDrawVert* src_v = &draw_list->VtxBuffer[i];
             ImDrawVertAllegro* dst_v = &vertices[i];
-            dst_v->pos = src_v->pos;
-            dst_v->uv = src_v->uv;
-            unsigned char* c = (unsigned char*)&src_v->col;
-            dst_v->col = al_map_rgba(c[0], c[1], c[2], c[3]);
+            DRAW_VERT_IMGUI_TO_ALLEGRO(dst_v, src_v);
         }
-
-        const int* indices = NULL;
+        const int* indices = nullptr;
         if (sizeof(ImDrawIdx) == 2)
         {
-            // FIXME-OPT: Unfortunately Allegro doesn't support 16-bit indices.. You can '#define ImDrawIdx int' in imconfig.h to request Dear ImGui to output 32-bit indices.
+            // FIXME-OPT: Allegro doesn't support 16-bit indices.
+            // You can '#define ImDrawIdx int' in imconfig.h to request Dear ImGui to output 32-bit indices.
             // Otherwise, we convert them from 16-bit to 32-bit at runtime here, which works perfectly but is a little wasteful.
             bd->BufIndices.resize(draw_list->IdxBuffer.Size);
             for (int i = 0; i < draw_list->IdxBuffer.Size; ++i)
@@ -205,7 +212,11 @@ void ImGui_ImplAllegro5_RenderDrawData(ImDrawData* draw_data)
                 // Apply scissor/clipping rectangle, Draw
                 ALLEGRO_BITMAP* texture = (ALLEGRO_BITMAP*)pcmd->GetTexID();
                 al_set_clipping_rectangle(clip_min.x, clip_min.y, clip_max.x - clip_min.x, clip_max.y - clip_min.y);
+#if ALLEGRO_HAS_DRAW_INDEXED_PRIM
+                al_draw_indexed_prim(&vertices[0], bd->VertexDecl, texture, &indices[pcmd->IdxOffset], pcmd->ElemCount, ALLEGRO_PRIM_TRIANGLE_LIST);
+#else
                 al_draw_prim(&vertices[0], bd->VertexDecl, texture, pcmd->IdxOffset, pcmd->IdxOffset + pcmd->ElemCount, ALLEGRO_PRIM_TRIANGLE_LIST);
+#endif
             }
         }
     }
@@ -227,6 +238,7 @@ bool ImGui_ImplAllegro5_CreateDeviceObjects()
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
     // Create texture
+    // (Bilinear sampling is required by default. Set 'io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines' or 'style.AntiAliasedLinesUseTex = false' to allow point/nearest sampling)
     int flags = al_get_new_bitmap_flags();
     int fmt = al_get_new_bitmap_format();
     al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP | ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR);
@@ -253,7 +265,7 @@ bool ImGui_ImplAllegro5_CreateDeviceObjects()
         return false;
 
     // Store our identifier
-    io.Fonts->SetTexID((void*)cloned_img);
+    io.Fonts->SetTexID((ImTextureID)(intptr_t)cloned_img);
     bd->Texture = cloned_img;
 
     // Create an invisible mouse cursor
@@ -271,14 +283,14 @@ void ImGui_ImplAllegro5_InvalidateDeviceObjects()
     ImGui_ImplAllegro5_Data* bd = ImGui_ImplAllegro5_GetBackendData();
     if (bd->Texture)
     {
-        io.Fonts->SetTexID(NULL);
+        io.Fonts->SetTexID(0);
         al_destroy_bitmap(bd->Texture);
-        bd->Texture = NULL;
+        bd->Texture = nullptr;
     }
     if (bd->MouseCursorInvisible)
     {
         al_destroy_mouse_cursor(bd->MouseCursorInvisible);
-        bd->MouseCursorInvisible = NULL;
+        bd->MouseCursorInvisible = nullptr;
     }
 }
 
@@ -452,7 +464,7 @@ bool ImGui_ImplAllegro5_Init(ALLEGRO_DISPLAY* display)
 void ImGui_ImplAllegro5_Shutdown()
 {
     ImGui_ImplAllegro5_Data* bd = ImGui_ImplAllegro5_GetBackendData();
-    IM_ASSERT(bd != NULL && "No platform backend to shutdown, or already shutdown?");
+    IM_ASSERT(bd != nullptr && "No platform backend to shutdown, or already shutdown?");
     ImGuiIO& io = ImGui::GetIO();
 
     ImGui_ImplAllegro5_InvalidateDeviceObjects();
@@ -473,15 +485,15 @@ static void ImGui_ImplAllegro5_UpdateKeyModifiers()
     ImGuiIO& io = ImGui::GetIO();
     ALLEGRO_KEYBOARD_STATE keys;
     al_get_keyboard_state(&keys);
-    io.AddKeyEvent(ImGuiKey_ModCtrl, al_key_down(&keys, ALLEGRO_KEY_LCTRL) || al_key_down(&keys, ALLEGRO_KEY_RCTRL));
-    io.AddKeyEvent(ImGuiKey_ModShift, al_key_down(&keys, ALLEGRO_KEY_LSHIFT) || al_key_down(&keys, ALLEGRO_KEY_RSHIFT));
-    io.AddKeyEvent(ImGuiKey_ModAlt, al_key_down(&keys, ALLEGRO_KEY_ALT) || al_key_down(&keys, ALLEGRO_KEY_ALTGR));
-    io.AddKeyEvent(ImGuiKey_ModSuper, al_key_down(&keys, ALLEGRO_KEY_LWIN) || al_key_down(&keys, ALLEGRO_KEY_RWIN));
+    io.AddKeyEvent(ImGuiMod_Ctrl, al_key_down(&keys, ALLEGRO_KEY_LCTRL) || al_key_down(&keys, ALLEGRO_KEY_RCTRL));
+    io.AddKeyEvent(ImGuiMod_Shift, al_key_down(&keys, ALLEGRO_KEY_LSHIFT) || al_key_down(&keys, ALLEGRO_KEY_RSHIFT));
+    io.AddKeyEvent(ImGuiMod_Alt, al_key_down(&keys, ALLEGRO_KEY_ALT) || al_key_down(&keys, ALLEGRO_KEY_ALTGR));
+    io.AddKeyEvent(ImGuiMod_Super, al_key_down(&keys, ALLEGRO_KEY_LWIN) || al_key_down(&keys, ALLEGRO_KEY_RWIN));
 }
 
 // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
-// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
+// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
+// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
 // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 bool ImGui_ImplAllegro5_ProcessEvent(ALLEGRO_EVENT* ev)
 {

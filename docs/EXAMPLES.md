@@ -17,21 +17,23 @@ You can find Windows binaries for some of those example applications at:
 
 Integration in a typical existing application, should take <20 lines when using standard backends.
 
-    At initialization:
-      call ImGui::CreateContext()
-      call ImGui_ImplXXXX_Init() for each backend.
+```cpp
+At initialization:
+  call ImGui::CreateContext()
+  call ImGui_ImplXXXX_Init() for each backend.
 
-    At the beginning of your frame:
-      call ImGui_ImplXXXX_NewFrame() for each backend.
-      call ImGui::NewFrame()
+At the beginning of your frame:
+  call ImGui_ImplXXXX_NewFrame() for each backend.
+  call ImGui::NewFrame()
 
-    At the end of your frame:
-      call ImGui::Render()
-      call ImGui_ImplXXXX_RenderDrawData() for your Renderer backend.
+At the end of your frame:
+  call ImGui::Render()
+  call ImGui_ImplXXXX_RenderDrawData() for your Renderer backend.
 
-    At shutdown:
-      call ImGui_ImplXXXX_Shutdown() for each backend.
-      call ImGui::DestroyContext()
+At shutdown:
+  call ImGui_ImplXXXX_Shutdown() for each backend.
+  call ImGui::DestroyContext()
+```
 
 Main resource:
 - Read **[Getting Started](https://github.com/ocornut/imgui/wiki/Getting-Started) wiki guide** for detailed examples of how to integrate Dear ImGui in an existing application.
@@ -81,10 +83,10 @@ GLFW (Mac) + Metal example. <BR>
 [example_glfw_opengl2/](https://github.com/ocornut/imgui/blob/master/examples/example_glfw_opengl2/) <BR>
 GLFW + OpenGL2 example (legacy, fixed pipeline). <BR>
 = main.cpp + imgui_impl_glfw.cpp + imgui_impl_opengl2.cpp <BR>
-**DO NOT USE THIS IF YOUR CODE/ENGINE IS USING MODERN OPENGL (SHADERS, VBO, VAO, etc.)** <BR>
+**DO NOT USE THIS IF YOUR CODE/ENGINE IS USING MODERN GL or WEBGL (SHADERS, VBO, VAO, etc.)** <BR>
 This code is mostly provided as a reference to learn about Dear ImGui integration, because it is shorter.
-If your code is using GL3+ context or any semi modern OpenGL calls, using this renderer is likely to
-make things more complicated, will require your code to reset many OpenGL attributes to their initial
+If your code is using GL3+ context or any semi modern GL calls, using this renderer is likely to
+make things more complicated, will require your code to reset many GL attributes to their initial
 state, and might confuse your GPU driver. One star, not recommended.
 
 [example_glfw_opengl3/](https://github.com/ocornut/imgui/blob/master/examples/example_glfw_opengl3/) <BR>
@@ -125,8 +127,8 @@ SDL2 (Win32, Mac, Linux etc.) + OpenGL example (legacy, fixed pipeline). <BR>
 = main.cpp + imgui_impl_sdl2.cpp + imgui_impl_opengl2.cpp <BR>
 **DO NOT USE OPENGL2 CODE IF YOUR CODE/ENGINE IS USING GL OR WEBGL (SHADERS, VBO, VAO, etc.)** <BR>
 This code is mostly provided as a reference to learn about Dear ImGui integration, because it is shorter.
-If your code is using GL3+ context or any semi modern OpenGL calls, using this renderer is likely to
-make things more complicated, will require your code to reset many OpenGL attributes to their initial
+If your code is using GL3+ context or any semi modern GL calls, using this renderer is likely to
+make things more complicated, will require your code to reset many GL attributes to their initial
 state, and might confuse your GPU driver. One star, not recommended.
 
 [example_sdl2_opengl3/](https://github.com/ocornut/imgui/blob/master/examples/example_sdl2_opengl3/) <BR>
@@ -169,7 +171,7 @@ Raw Windows + OpenGL3 + example (modern, programmable pipeline) <BR>
 = main.cpp + imgui_impl_win32.cpp + imgui_impl_opengl3.cpp <BR>
 
 
-### Miscallaneous
+### Miscellaneous
 
 **Building**
 
