@@ -53,5 +53,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />
+    <None Include="..\..\misc\debuggers\imgui.natstepfilter">
+      <Filter>imgui</Filter>
+    </None>
   </ItemGroup>
 </Project>
