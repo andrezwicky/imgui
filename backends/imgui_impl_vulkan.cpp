@@ -381,6 +381,21 @@ static uint32_t __glsl_shader_frag_spv[] =
 //-----------------------------------------------------------------------------
 // FUNCTIONS
 //-----------------------------------------------------------------------------
+extern "C" const uint32_t* GetImGuiVertexShader(size_t* size)
+{
+    if (size) {
+        *size = sizeof(__glsl_shader_vert_spv);
+    }
+    return __glsl_shader_vert_spv;
+}
+
+extern "C" const uint32_t* GetImGuiFragmentShader(size_t* size)
+{
+    if (size) {
+        *size = sizeof(__glsl_shader_frag_spv);
+    }
+    return __glsl_shader_frag_spv;
+}
 
 // Backend data stored in io.BackendRendererUserData to allow support for multiple Dear ImGui contexts
 // It is STRONGLY preferred that you use docking branch with multi-viewports (== single Dear ImGui context + multiple windows) instead of multiple Dear ImGui contexts.
@@ -1255,12 +1270,25 @@ void ImGui_ImplVulkan_RemoveTexture(VkDescriptorSet descriptor_set)
 
 void ImGui_ImplVulkan_DestroyFrameRenderBuffers(VkDevice device, ImGui_ImplVulkan_FrameRenderBuffers* buffers, const VkAllocationCallbacks* allocator)
 {
+    /*
     if (buffers->VertexBuffer) { vkDestroyBuffer(device, buffers->VertexBuffer, allocator); buffers->VertexBuffer = VK_NULL_HANDLE; }
     if (buffers->VertexBufferMemory) { vkFreeMemory(device, buffers->VertexBufferMemory, allocator); buffers->VertexBufferMemory = VK_NULL_HANDLE; }
     if (buffers->IndexBuffer) { vkDestroyBuffer(device, buffers->IndexBuffer, allocator); buffers->IndexBuffer = VK_NULL_HANDLE; }
     if (buffers->IndexBufferMemory) { vkFreeMemory(device, buffers->IndexBufferMemory, allocator); buffers->IndexBufferMemory = VK_NULL_HANDLE; }
     buffers->VertexBufferSize = 0;
     buffers->IndexBufferSize = 0;
+    */
+
+    // Wait for GPU to finish using the buffers
+    vkDeviceWaitIdle(device); // Ensure all GPU operations are complete
+
+    if (buffers->VertexBuffer) { vkDestroyBuffer(device, buffers->VertexBuffer, allocator); buffers->VertexBuffer = VK_NULL_HANDLE; }
+    if (buffers->VertexBufferMemory) { vkFreeMemory(device, buffers->VertexBufferMemory, allocator); buffers->VertexBufferMemory = VK_NULL_HANDLE; }
+    if (buffers->IndexBuffer) { vkDestroyBuffer(device, buffers->IndexBuffer, allocator); buffers->IndexBuffer = VK_NULL_HANDLE; }
+    if (buffers->IndexBufferMemory) { vkFreeMemory(device, buffers->IndexBufferMemory, allocator); buffers->IndexBufferMemory = VK_NULL_HANDLE; }
+    buffers->VertexBufferSize = 0;
+    buffers->IndexBufferSize = 0;
+
 }
 
 void ImGui_ImplVulkan_DestroyWindowRenderBuffers(VkDevice device, ImGui_ImplVulkan_WindowRenderBuffers* buffers, const VkAllocationCallbacks* allocator)

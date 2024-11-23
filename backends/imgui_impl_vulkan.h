@@ -62,6 +62,14 @@
 #define IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
 #endif
 
+
+
+extern "C" const uint32_t* GetImGuiVertexShader(size_t* size);
+extern "C" const uint32_t* GetImGuiFragmentShader(size_t* size);
+
+
+
+
 // Initialization data, for ImGui_ImplVulkan_Init()
 // - VkDescriptorPool should be created with VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
 //   and must contain a pool size large enough to hold an ImGui VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER descriptor.
